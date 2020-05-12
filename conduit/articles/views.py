@@ -15,6 +15,11 @@ from .serializers import (article_schema, articles_schema, comment_schema,
 
 blueprint = Blueprint('articles', __name__)
 
+# return True if you want to allow this user
+# to update and remove their articles
+def do_not_update_user(username):
+    return username == 'XAEA-12'
+
 
 ##########
 # Articles
@@ -43,6 +48,7 @@ def get_articles(tag=None, author=None, favorited=None, limit=20, offset=0):
 def make_article(body, title, description, tagList=None):
     article = Article(title=title, description=description, body=body,
                       author=current_user.profile)
+    if do_not_update_user(current_user.username): return article
     if tagList is not None:
         for tag in tagList:
             mtag = Tags.query.filter_by(tagname=tag).first()
@@ -60,6 +66,7 @@ def make_article(body, title, description, tagList=None):
 @marshal_with(article_schema)
 def update_article(slug, **kwargs):
     article = Article.query.filter_by(slug=slug, author_id=current_user.profile.id).first()
+    if do_not_update_user(current_user.username): return article
     if not article:
         raise InvalidUsage.article_not_found()
     article.update(updatedAt=dt.datetime.utcnow(), **kwargs)
@@ -70,6 +77,7 @@ def update_article(slug, **kwargs):
 @blueprint.route('/api/articles/<slug>', methods=('DELETE',))
 @jwt_required
 def delete_article(slug):
+    if do_not_update_user(current_user.username): return '', 200
     article = Article.query.filter_by(slug=slug, author_id=current_user.profile.id).first()
     article.delete()
     return '', 200

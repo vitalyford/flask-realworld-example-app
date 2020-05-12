@@ -56,6 +56,8 @@ def get_user():
 @marshal_with(user_schema)
 def update_user(**kwargs):
     user = current_user
+    # comment out if you want to allow updating XAEA-12 user
+    if user.username == 'XAEA-12': return user
     # take in consideration the password
     password = kwargs.pop('password', None)
     if password:
